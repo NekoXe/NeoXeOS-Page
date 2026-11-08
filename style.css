@@ -38,22 +38,11 @@ button:focus, button:focus-visible, .nav-btn:focus, .theme-switch:focus,
     box-shadow: none !important;
 }
 
-/* ===== 背景动画 ===== */
-@keyframes floatSoft1 {
-    0% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(6%, 8%) scale(1.2); }
-    100% { transform: translate(0, 0) scale(1); }
-}
-@keyframes floatSoft2 {
-    0% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(-5%, 6%) scale(1.25); }
-    100% { transform: translate(0, 0) scale(1); }
-}
-@keyframes floatSoft3 {
-    0% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(7%, -5%) scale(1.15); }
-    100% { transform: translate(0, 0) scale(1); }
-}
+/* ===== 背景动画 =====
+   动画改由 JS 节流驱动（30fps），见 script.js 中的 initBlobAnimation。
+   不再使用 @keyframes floatSoft1/2/3。
+*/
+
 .bg-blobs {
     position: fixed;
     top: 0;
@@ -63,40 +52,51 @@ button:focus, button:focus-visible, .nav-btn:focus, .theme-switch:focus,
     z-index: -2;
     overflow: hidden;
     pointer-events: none;
+    /* 隔离重绘范围，动画只影响内部 */
+    contain: strict;
 }
+
 .blob {
     position: absolute;
-    filter: blur(70px);
     border-radius: 50%;
-    will-change: transform;
-    backface-visibility: hidden;
+    /* 已移除 filter: blur(70px)，改用多层 radial-gradient 模拟柔光 */
+    /* 已移除 will-change / backface-visibility，避免长期占用显存 */
 }
+
 .blob1 {
     width: 60vw;
     height: 60vw;
     top: -15vh;
     left: -10vw;
-    background: radial-gradient(circle, #0078d4, #2a6eb0);
-    opacity: 0.35;
-    animation: floatSoft1 24s infinite alternate ease-in-out;
+    background: radial-gradient(circle,
+        rgba(0, 120, 212, 0.35) 0%,
+        rgba(0, 120, 212, 0.28) 25%,
+        rgba(0, 120, 212, 0.12) 50%,
+        rgba(0, 120, 212, 0) 72%);
 }
+
 .blob2 {
     width: 45vw;
     height: 45vw;
     bottom: -10vh;
     right: -8vw;
-    background: radial-gradient(circle, #2b6fbd, #5082c2);
-    opacity: 0.25;
-    animation: floatSoft2 28s infinite alternate ease-in-out;
+    background: radial-gradient(circle,
+        rgba(43, 111, 189, 0.25) 0%,
+        rgba(43, 111, 189, 0.20) 25%,
+        rgba(43, 111, 189, 0.08) 50%,
+        rgba(43, 111, 189, 0) 72%);
 }
+
 .blob3 {
     width: 40vw;
     height: 40vw;
     top: 45%;
     left: 35%;
-    background: radial-gradient(circle, #3c7bcb, #6b9eff);
-    opacity: 0.18;
-    animation: floatSoft3 22s infinite alternate ease-in-out;
+    background: radial-gradient(circle,
+        rgba(60, 123, 203, 0.18) 0%,
+        rgba(60, 123, 203, 0.14) 25%,
+        rgba(60, 123, 203, 0.06) 50%,
+        rgba(60, 123, 203, 0) 72%);
 }
 
 /* ===== 主题变量 ===== */
@@ -154,7 +154,8 @@ button:focus, button:focus-visible, .nav-btn:focus, .theme-switch:focus,
     --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.04);
     --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.08);
     --expand-bg: rgba(0, 0, 0, 0.02);
-    --backdrop-blur: blur(16px);
+    /* 毛玻璃从 16px 降到 8px，视觉仍保留 */
+    --backdrop-blur: blur(8px);
     --card-inset: inset 0 1px 0 rgba(255,255,255,0.6);
 }
 body.dark {
@@ -186,6 +187,7 @@ body {
     margin: 0 auto;
     background: var(--card-bg);
     backdrop-filter: var(--backdrop-blur);
+    -webkit-backdrop-filter: var(--backdrop-blur);
     border-radius: 32px;
     box-shadow: var(--shadow-md), 0 0 0 1px var(--card-border);
     overflow: hidden;
@@ -264,6 +266,7 @@ body {
 .setting-section {
     background: var(--card-bg);
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     border-radius: 24px;
     border: 1px solid var(--card-border);
     margin-bottom: 18px;
@@ -337,6 +340,7 @@ body {
     padding: 12px 20px 16px 24px;
     background: rgba(128,128,128,0.04);
     backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     border-radius: 20px;
     margin: 4px 0 8px 0;
 }
@@ -411,6 +415,7 @@ body {
     line-height: 1.5;
     background: rgba(128,128,128,0.05);
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     border-radius: 20px;
     margin: 4px 0 8px 0;
 }
@@ -520,6 +525,21 @@ body {
     .nav-btn { padding: 6px 14px; font-size: 0.85rem; }
     .version-detail-inner { padding: 10px 16px; }
     .spec-list { padding-left: 4px; }
+
+    /* 移动端毛玻璃再降一档，保留质感但减轻 GPU 压力 */
+    .win11-container {
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+    .setting-section {
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+    }
+    .version-detail-inner,
+    .qa-answer-inner {
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+    }
 }
 @media (orientation: portrait) {
     #thanks .version-summary {
@@ -538,6 +558,7 @@ body.simplified .bg-blobs {
 }
 body.simplified .win11-container {
     backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     background: var(--card-bg) !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
 }
@@ -545,6 +566,7 @@ body.simplified .setting-section,
 body.simplified .version-detail-inner,
 body.simplified .qa-answer-inner {
     backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     background: var(--card-bg) !important;
 }
 body.simplified .setting-section {
